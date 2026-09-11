@@ -4710,52 +4710,55 @@ class H5PContentValidator {
     $field = null;
 
     $isSubContent = isset($semantics->isSubContent) && $semantics->isSubContent === TRUE;
-    
-    if (is_array($semantics->fields)){
-      if (count($semantics->fields) == 1 && $flatten && !$isSubContent) {
-        $field = $semantics->fields[0];
-        $function = $this->typeMap[$field->type];
-        $this->$function($group, $field);
-      }
-      else {
-        foreach ($group as $key => &$value) {
-          // If subContentId is set, keep value
-          if($isSubContent && ($key == 'subContentId')){
-            continue;
-          }
 
-          // Find semantics for name=$key
-          $found = FALSE;
-          foreach ($semantics->fields as $field) {
-            if ($field->name == $key) {
-              if (isset($semantics->optional) && $semantics->optional) {
-                $field->optional = TRUE;
-              }
-              $function = $this->typeMap[$field->type];
-              $found = TRUE;
-              break;
+    if (!isset($semantics->fields) || !is_array($semantics->fields) || empty($semantics->fields)) {
+      $this->h5pF->setErrorMessage($this->h5pF->t('H5P internal error: semantics fields formatted incorrectly.'), 'semantics-fields-unknown-type');
+      return;
+    }
+
+    if (count($semantics->fields) == 1 && $flatten && !$isSubContent) {
+      $field = $semantics->fields[0];
+      $function = $this->typeMap[$field->type];
+      $this->$function($group, $field);
+    }
+    else {
+      foreach ($group as $key => &$value) {
+        // If subContentId is set, keep value
+        if($isSubContent && ($key == 'subContentId')){
+          continue;
+        }
+
+        // Find semantics for name=$key
+        $found = FALSE;
+        foreach ($semantics->fields as $field) {
+          if ($field->name == $key) {
+            if (isset($semantics->optional) && $semantics->optional) {
+              $field->optional = TRUE;
             }
+            $function = $this->typeMap[$field->type];
+            $found = TRUE;
+            break;
           }
-          if ($found) {
-            if ($function) {
-              $this->$function($value, $field);
-              if ($value === NULL) {
-                unset($group->$key);
-              }
-            }
-            else {
-              // We have a field type in semantics for which we don't have a
-              // known validator.
-              $this->h5pF->setErrorMessage($this->h5pF->t('H5P internal error: unknown content type "@type" in semantics. Removing content!', array('@type' => $field->type)), 'semantics-unknown-type');
+        }
+        if ($found) {
+          if ($function) {
+            $this->$function($value, $field);
+            if ($value === NULL) {
               unset($group->$key);
             }
           }
           else {
-            // If validator is not found, something exists in content that does
-            // not have a corresponding semantics field. Remove it.
-            // $this->h5pF->setErrorMessage($this->h5pF->t('H5P internal error: no validator exists for @key', array('@key' => $key)));
+            // We have a field type in semantics for which we don't have a
+            // known validator.
+            $this->h5pF->setErrorMessage($this->h5pF->t('H5P internal error: unknown content type "@type" in semantics. Removing content!', array('@type' => $field->type)), 'semantics-unknown-type');
             unset($group->$key);
           }
+        }
+        else {
+          // If validator is not found, something exists in content that does
+          // not have a corresponding semantics field. Remove it.
+          // $this->h5pF->setErrorMessage($this->h5pF->t('H5P internal error: no validator exists for @key', array('@key' => $key)));
+          unset($group->$key);
         }
       }
     }
