@@ -4711,7 +4711,7 @@ class H5PContentValidator {
 
     $isSubContent = isset($semantics->isSubContent) && $semantics->isSubContent === TRUE;
 
-    if (!isset($semantics->fields) || !is_array($semantics->fields) || empty($semantics->fields)) {
+    if (!isset($semantics->fields) || !is_array($semantics->fields)) {
       $this->h5pF->setErrorMessage($this->h5pF->t('H5P internal error: semantics fields formatted incorrectly.'), 'semantics-fields-unknown-type');
       return;
     }
